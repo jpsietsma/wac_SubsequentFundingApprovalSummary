@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner">
+<Report xmlns="http://schemas.microsoft.com/sqlserver/reporting/2016/01/reportdefinition" xmlns:rd="http://schemas.microsoft.com/SQLServer/reporting/reportdesigner" xmlns:cl="http://schemas.microsoft.com/sqlserver/reporting/2010/01/componentdefinition">
   <AutoRefresh>0</AutoRefresh>
   <DataSources>
     <DataSource Name="WAC_POTOK2012">
@@ -7,11 +7,16 @@
       <rd:SecurityType>None</rd:SecurityType>
       <rd:DataSourceID>43e9a975-41a7-4d02-aca2-3b96666f3ddd</rd:DataSourceID>
     </DataSource>
+    <DataSource Name="SQLEXPRESS">
+      <DataSourceReference>SQLEXPRESS</DataSourceReference>
+      <rd:SecurityType>None</rd:SecurityType>
+      <rd:DataSourceID>a8f243b3-e7f0-4958-8313-e4ee57272fd5</rd:DataSourceID>
+    </DataSource>
   </DataSources>
   <DataSets>
-    <DataSet Name="SubsequentApprovalFundingSummary">
-      <SharedDataSet>
-        <SharedDataSetReference>SubsequentApprovalFundingSummary</SharedDataSetReference>
+    <DataSet Name="SubsequentFundingApprovalSummary">
+      <Query>
+        <DataSourceName>SQLEXPRESS</DataSourceName>
         <QueryParameters>
           <QueryParameter Name="@date1">
             <Value>=Parameters!date1.Value</Value>
@@ -20,49 +25,60 @@
             <Value>=Parameters!date2.Value</Value>
           </QueryParameter>
         </QueryParameters>
-      </SharedDataSet>
+        <CommandType>StoredProcedure</CommandType>
+        <CommandText>bmp_ag_SubsequentApprovalFundingSummary_rs</CommandText>
+      </Query>
       <Fields>
         <Field Name="PK">
           <DataField>PK</DataField>
           <rd:TypeName>System.Int32</rd:TypeName>
         </Field>
         <Field Name="Farm_ID">
-          <DataField>Farm_ID</DataField>
+          <DataField>Farm ID</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="BMP__">
-          <DataField>BMP__</DataField>
+          <DataField>BMP #</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Farm_Size">
-          <DataField>Farm_Size</DataField>
+          <DataField>Farm Size</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="WAC_Region">
-          <DataField>WAC_Region</DataField>
+          <DataField>WAC Region</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Subsequent_Approval_Amount">
-          <DataField>Subsequent_Approval_Amount</DataField>
+          <DataField>Subsequent Approval Amount</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Funding_Date">
-          <DataField>Funding_Date</DataField>
+          <DataField>Funding Date</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Funding_Agency">
-          <DataField>Funding_Agency</DataField>
+          <DataField>Funding Agency</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Funding_Source">
-          <DataField>Funding_Source</DataField>
+          <DataField>Funding Source</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
         <Field Name="Funding_Purpose">
-          <DataField>Funding_Purpose</DataField>
+          <DataField>Funding Purpose</DataField>
           <rd:TypeName>System.String</rd:TypeName>
         </Field>
       </Fields>
+      <Filters>
+        <Filter>
+          <FilterExpression>=Fields!Funding_Source.Value</FilterExpression>
+          <Operator>In</Operator>
+          <FilterValues>
+            <FilterValue>=Parameters!FundingSource.Value</FilterValue>
+          </FilterValues>
+        </Filter>
+      </Filters>
     </DataSet>
     <DataSet Name="FundingSources">
       <SharedDataSet>
@@ -80,7 +96,7 @@
     <ReportSection>
       <Body>
         <ReportItems>
-          <Tablix Name="Tablix1">
+          <Tablix Name="SubsequentFundingApprovalSummaryDataTablix">
             <TablixBody>
               <TablixColumns>
                 <TablixColumn>
@@ -611,7 +627,9 @@
                               <TextRuns>
                                 <TextRun>
                                   <Value>=Fields!Subsequent_Approval_Amount.Value</Value>
-                                  <Style />
+                                  <Style>
+                                    <Format>'$'#,0.00;('$'#,0.00)</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style>
@@ -629,6 +647,7 @@
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
+                            <rd:FormatSymbolCulture>en-US</rd:FormatSymbolCulture>
                           </Style>
                         </Textbox>
                       </CellContents>
@@ -903,8 +922,10 @@
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value />
-                                  <Style />
+                                  <Value>Total Approval: </Value>
+                                  <Style>
+                                    <FontWeight>Bold</FontWeight>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style>
@@ -928,15 +949,17 @@
                     </TablixCell>
                     <TablixCell>
                       <CellContents>
-                        <Textbox Name="Textbox8">
+                        <Textbox Name="ApprovalAmountSubtotal">
                           <CanGrow>true</CanGrow>
                           <KeepTogether>true</KeepTogether>
                           <Paragraphs>
                             <Paragraph>
                               <TextRuns>
                                 <TextRun>
-                                  <Value />
-                                  <Style />
+                                  <Value>=Sum(iif(IsNumeric(Fields!Subsequent_Approval_Amount.Value), CDbl(Fields!Subsequent_Approval_Amount.Value), 0))</Value>
+                                  <Style>
+                                    <Format>'$'#,0.00;('$'#,0.00);'-'</Format>
+                                  </Style>
                                 </TextRun>
                               </TextRuns>
                               <Style>
@@ -944,7 +967,6 @@
                               </Style>
                             </Paragraph>
                           </Paragraphs>
-                          <rd:DefaultName>Textbox8</rd:DefaultName>
                           <Style>
                             <Border>
                               <Color>LightGrey</Color>
@@ -954,6 +976,7 @@
                             <PaddingRight>2pt</PaddingRight>
                             <PaddingTop>2pt</PaddingTop>
                             <PaddingBottom>2pt</PaddingBottom>
+                            <rd:FormatSymbolCulture>en-US</rd:FormatSymbolCulture>
                           </Style>
                         </Textbox>
                       </CellContents>
@@ -1150,7 +1173,16 @@
               </TablixMembers>
             </TablixRowHierarchy>
             <RepeatColumnHeaders>true</RepeatColumnHeaders>
-            <DataSetName>SubsequentApprovalFundingSummary</DataSetName>
+            <KeepTogether>true</KeepTogether>
+            <DataSetName>SubsequentFundingApprovalSummary</DataSetName>
+            <PageBreak>
+              <BreakLocation>End</BreakLocation>
+            </PageBreak>
+            <SortExpressions>
+              <SortExpression>
+                <Value>=Fields!Funding_Source.Value</Value>
+              </SortExpression>
+            </SortExpressions>
             <Top>1.3425in</Top>
             <Left>0.36333in</Left>
             <Height>0.75in</Height>
@@ -1232,7 +1264,7 @@
             </Style>
           </Textbox>
         </ReportItems>
-        <Height>2.43625in</Height>
+        <Height>5.74875in</Height>
         <Style />
       </Body>
       <Width>15.45708in</Width>
@@ -1266,7 +1298,7 @@
     </ReportParameter>
     <ReportParameter Name="FundingSource">
       <DataType>String</DataType>
-      <Prompt>Funding Source</Prompt>
+      <Prompt>Funding Source:</Prompt>
       <ValidValues>
         <DataSetReference>
           <DataSetName>FundingSources</DataSetName>
@@ -1274,12 +1306,41 @@
           <LabelField>pk_fundingSource_code</LabelField>
         </DataSetReference>
       </ValidValues>
+      <MultiValue>true</MultiValue>
       <UsedInQuery>True</UsedInQuery>
+      <cl:ComponentMetadata>
+        <cl:HideUpdateNotifications>true</cl:HideUpdateNotifications>
+      </cl:ComponentMetadata>
+    </ReportParameter>
+    <ReportParameter Name="ShowFundingSourceSummary">
+      <DataType>Boolean</DataType>
+      <DefaultValue>
+        <Values>
+          <Value>false</Value>
+        </Values>
+      </DefaultValue>
+      <Prompt>Include Source Summary</Prompt>
+      <ValidValues>
+        <ParameterValues>
+          <ParameterValue>
+            <Value>true</Value>
+            <Label>Yes</Label>
+          </ParameterValue>
+          <ParameterValue>
+            <Value>false</Value>
+            <Label>No</Label>
+          </ParameterValue>
+        </ParameterValues>
+      </ValidValues>
+      <UsedInQuery>True</UsedInQuery>
+      <cl:ComponentMetadata>
+        <cl:HideUpdateNotifications>true</cl:HideUpdateNotifications>
+      </cl:ComponentMetadata>
     </ReportParameter>
   </ReportParameters>
   <ReportParametersLayout>
     <GridLayoutDefinition>
-      <NumberOfColumns>3</NumberOfColumns>
+      <NumberOfColumns>4</NumberOfColumns>
       <NumberOfRows>1</NumberOfRows>
       <CellDefinitions>
         <CellDefinition>
@@ -1296,6 +1357,11 @@
           <ColumnIndex>2</ColumnIndex>
           <RowIndex>0</RowIndex>
           <ParameterName>FundingSource</ParameterName>
+        </CellDefinition>
+        <CellDefinition>
+          <ColumnIndex>3</ColumnIndex>
+          <RowIndex>0</RowIndex>
+          <ParameterName>ShowFundingSourceSummary</ParameterName>
         </CellDefinition>
       </CellDefinitions>
     </GridLayoutDefinition>

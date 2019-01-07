@@ -50,12 +50,14 @@
   </PropertyGroup>
   <ItemGroup>
     <DataSet Include="FundingSources.rsd" />
-    <DataSet Include="SubsequentApprovalFundingSummary.rsd" />
   </ItemGroup>
   <ItemGroup>
+    <DataSource Include="SQLEXPRESS.rds" />
+    <DataSource Include="Wac.rds" />
     <DataSource Include="WAC_POTOK2012.rds" />
   </ItemGroup>
   <ItemGroup>
+    <Report Include="SubReportSourceFundingSummary.rdl" />
     <Report Include="SubsequentApprovalFundingSummary.rdl" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Reporting Services\Microsoft.ReportingServices.MSBuilder.targets" />
