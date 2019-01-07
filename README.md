@@ -1,4 +1,5 @@
-Subsequent Funding Approval Summary
+# Subsequent Funding Approval Summary
+
 Summary report of the Subsequent Funding Approval Numbers with subtotal of Approval Amounts included.
 
 v1.0 [08/23/2018] - Added Report
